@@ -21,4 +21,5 @@ Please make a component that takes a prompt as input, sends an api request to Op
       {"role": "user", "content": "<PROMPT>"}
     ]
   }
+ My api key is WAVS_ENV_OPENAI_KEY in my .env file.
 ```
