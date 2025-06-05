@@ -1,4 +1,4 @@
-# LLM-made components
+# LLM-made WAVS components
 
 This repo contains examples of one-shot WAVS components made using Claude and Cursor rulefiles. 
 
