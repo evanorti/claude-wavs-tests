@@ -18,10 +18,7 @@ pub fn decode_trigger_event(trigger_data: TriggerData) -> Result<(u64, Vec<u8>, 
                 <solidity::TriggerInfo as SolValue>::abi_decode(&event._triggerInfo)?;
             Ok((trigger_info.triggerId, trigger_info.data.to_vec(), Destination::Ethereum))
         }
-        TriggerData::Raw(data) => {
-            // For CLI testing, just pass the raw data as-is
-            Ok((0, data.clone(), Destination::CliOutput))
-        }
+        TriggerData::Raw(data) => Ok((0, data.clone(), Destination::CliOutput)),
         _ => Err(anyhow::anyhow!("Unsupported trigger data type")),
     }
 }

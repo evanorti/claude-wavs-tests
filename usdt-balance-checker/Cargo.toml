@@ -1,5 +1,5 @@
 [package]
-name = "usdt-balance-checker-contract"
+name = "usdt-balance-checker"
 edition.workspace = true
 version.workspace = true
 authors.workspace = true
@@ -7,7 +7,7 @@ rust-version.workspace = true
 repository.workspace = true
 
 [dependencies]
-wit-bindgen-rt = { workspace = true }
+wit-bindgen-rt ={ workspace = true}
 wavs-wasi-utils = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
@@ -15,8 +15,6 @@ alloy-sol-macro = { workspace = true }
 wstd = { workspace = true }
 alloy-sol-types = { workspace = true }
 anyhow = { workspace = true }
-
-# Blockchain interaction dependencies
 alloy-primitives = { workspace = true }
 alloy-provider = { workspace = true }
 alloy-rpc-types = { workspace = true }
@@ -34,5 +32,5 @@ strip = true
 lto = true
 
 [package.metadata.component]
-package = "component:usdt-balance-checker-contract"
+package = "component:usdt-balance-checker"
 target = "wavs:worker/layer-trigger-world@0.4.0-beta.4"

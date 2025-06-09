@@ -1,8 +1,10 @@
 mod trigger;
 use trigger::{decode_trigger_event, encode_trigger_output, Destination};
+
 pub mod bindings;
 use crate::bindings::host::get_evm_chain_config;
 use crate::bindings::{export, Guest, TriggerAction, WasmResponse};
+
 use alloy_network::Ethereum;
 use alloy_primitives::{Address, TxKind, U256};
 use alloy_provider::{Provider, RootProvider};
@@ -11,11 +13,8 @@ use alloy_sol_types::{sol, SolCall, SolValue};
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
-use wavs_wasi_utils::evm::new_evm_provider;
+use wavs_wasi_utils::evm::{alloy_primitives::hex, new_evm_provider};
 use wstd::runtime::block_on;
-
-const USDT_CONTRACT_ADDRESS: &str = "0xdAC17F958D2ee523a2206206994597C13D831ec7";
-const USDT_DECIMALS: u8 = 6;
 
 sol! {
     interface IERC20 {
@@ -24,16 +23,14 @@ sol! {
     }
 }
 
-sol! {
-    function checkUsdtBalance(string wallet) external;
-}
+const USDT_CONTRACT_ADDRESS: &str = "0xdAC17F958D2ee523a2206206994597C13D831ec7";
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct UsdtBalanceData {
     wallet: String,
     balance_raw: String,
     balance_formatted: String,
-    contract_address: String,
+    usdt_contract: String,
     decimals: u8,
     timestamp: String,
 }
@@ -46,20 +43,20 @@ impl Guest for Component {
         let (trigger_id, req, dest) =
             decode_trigger_event(action.data).map_err(|e| e.to_string())?;
 
-        let req_clone = req.clone();
+        let wallet_address_str = {
+            let input_str = String::from_utf8(req.clone())
+                .map_err(|e| format!("Input is not valid UTF-8: {}", e))?;
 
-        // Decode the string using proper ABI decoding
-        let wallet_address_str =
-            if let Ok(decoded) = trigger::solidity::checkUsdtBalanceCall::abi_decode(&req_clone) {
-                // If it has a function selector (from cast abi-encode "f(string)" format)
-                decoded.wallet
+            let hex_data = if input_str.starts_with("0x") {
+                hex::decode(&input_str[2..])
+                    .map_err(|e| format!("Failed to decode hex string: {}", e))?
             } else {
-                // Fallback: try decoding just as a string parameter (no function selector)
-                match <String as SolValue>::abi_decode(&req_clone) {
-                    Ok(s) => s,
-                    Err(e) => return Err(format!("Failed to decode input as ABI string: {}", e)),
-                }
+                req.clone()
             };
+
+            <String as SolValue>::abi_decode(&hex_data)
+                .map_err(|e| format!("Failed to decode input as ABI string: {}", e))?
+        };
 
         let res = block_on(async move {
             let balance_data = get_usdt_balance(&wallet_address_str).await?;
@@ -97,30 +94,54 @@ async fn get_usdt_balance(wallet_address_str: &str) -> Result<UsdtBalanceData, S
     let result = provider.call(tx).await.map_err(|e| e.to_string())?;
     let balance_raw: U256 = U256::from_be_slice(&result);
 
-    let formatted_balance = format_usdt_amount(balance_raw, USDT_DECIMALS);
+    let decimals_call = IERC20::decimalsCall {};
+    let tx_decimals = alloy_rpc_types::eth::TransactionRequest {
+        to: Some(TxKind::Call(usdt_address)),
+        input: TransactionInput { input: Some(decimals_call.abi_encode().into()), data: None },
+        ..Default::default()
+    };
+
+    let result_decimals = provider.call(tx_decimals).await.map_err(|e| e.to_string())?;
+    let decimals: u8 = result_decimals[31];
+
+    let formatted_balance = format_token_amount(balance_raw, decimals);
 
     Ok(UsdtBalanceData {
         wallet: wallet_address_str.to_string(),
         balance_raw: balance_raw.to_string(),
         balance_formatted: formatted_balance,
-        contract_address: USDT_CONTRACT_ADDRESS.to_string(),
-        decimals: USDT_DECIMALS,
+        usdt_contract: USDT_CONTRACT_ADDRESS.to_string(),
+        decimals,
         timestamp: get_current_timestamp(),
     })
 }
 
-fn format_usdt_amount(amount: U256, decimals: u8) -> String {
+fn format_token_amount(amount: U256, decimals: u8) -> String {
     let mut divisor = U256::from(1);
     for _ in 0..decimals {
         divisor = divisor * U256::from(10);
     }
     let formatted_amount = amount / divisor;
-    formatted_amount.to_string()
+    let remainder = amount % divisor;
+
+    if remainder == U256::ZERO {
+        formatted_amount.to_string()
+    } else {
+        let remainder_str = remainder.to_string();
+        let padded_remainder = format!("{:0width$}", remainder_str, width = decimals as usize);
+        let trimmed_remainder = padded_remainder.trim_end_matches('0');
+        if trimmed_remainder.is_empty() {
+            formatted_amount.to_string()
+        } else {
+            format!("{}.{}", formatted_amount, trimmed_remainder)
+        }
+    }
 }
 
 fn get_current_timestamp() -> String {
-    match std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH) {
-        Ok(duration) => duration.as_secs().to_string(),
-        Err(_) => "0".to_string(),
-    }
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_secs()
+        .to_string()
 }
