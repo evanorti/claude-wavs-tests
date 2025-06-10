@@ -1,5 +1,5 @@
 [package]
-name = "openai-chat-oracle"
+name = "openai-chat"
 edition.workspace = true
 version.workspace = true
 authors.workspace = true
@@ -8,7 +8,7 @@ repository.workspace = true
 
 [dependencies]
 # Core dependencies (always needed)
-wit-bindgen-rt = { workspace = true }
+wit-bindgen-rt = { workspace = true}
 wavs-wasi-utils = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
@@ -28,5 +28,5 @@ strip = true
 lto = true
 
 [package.metadata.component]
-package = "component:openai-chat-oracle"
+package = "component:openai-chat"
 target = "wavs:worker/layer-trigger-world@0.4.0-beta.4"

@@ -5,13 +5,11 @@ use alloy_sol_types::SolValue;
 use anyhow::Result;
 use wavs_wasi_utils::decode_event_log_data;
 
-/// Represents the destination where the trigger output should be sent
 pub enum Destination {
     Ethereum,
     CliOutput,
 }
 
-/// Decodes incoming trigger event data into its components
 pub fn decode_trigger_event(trigger_data: TriggerData) -> Result<(u64, Vec<u8>, Destination)> {
     match trigger_data {
         TriggerData::EvmContractEvent(TriggerDataEvmContractEvent { log, .. }) => {
@@ -25,7 +23,6 @@ pub fn decode_trigger_event(trigger_data: TriggerData) -> Result<(u64, Vec<u8>, 
     }
 }
 
-/// Encodes the output data for submission back to Ethereum
 pub fn encode_trigger_output(trigger_id: u64, output: impl AsRef<[u8]>) -> WasmResponse {
     WasmResponse {
         payload: solidity::DataWithId {
@@ -37,16 +34,13 @@ pub fn encode_trigger_output(trigger_id: u64, output: impl AsRef<[u8]>) -> WasmR
     }
 }
 
-/// Solidity type definitions for the OpenAI chat component
 pub mod solidity {
     use alloy_sol_macro::sol;
     pub use ITypes::*;
-
-    // Import the main interface types
     sol!("../../src/interfaces/ITypes.sol");
 
-    // Define the function signature for generating AI responses
+    // trigger contract function that encodes string input
     sol! {
-        function generateResponse(string prompt) external;
+        function addTrigger(string data) external;
     }
 }

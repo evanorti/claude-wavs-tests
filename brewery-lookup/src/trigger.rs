@@ -39,8 +39,8 @@ pub mod solidity {
     pub use ITypes::*;
     sol!("../../src/interfaces/ITypes.sol");
 
-    // Define the function that encodes string input
+    // Function for ABI decoding zip code input
     sol! {
-        function processPrompt(string prompt) external;
+        function lookup(string zip) external;
     }
 }

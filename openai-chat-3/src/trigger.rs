@@ -39,7 +39,8 @@ pub mod solidity {
     pub use ITypes::*;
     sol!("../../src/interfaces/ITypes.sol");
 
+    // trigger contract function that encodes string input
     sol! {
-        function findBreweries(string zipCode) external;
+        function addTrigger(string data) external;
     }
 }

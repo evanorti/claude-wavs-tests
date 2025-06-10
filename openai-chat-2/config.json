@@ -10,5 +10,6 @@
   "cleanup_cmds": [
     "killall anvil || true",
     "docker compose rm --stop --force --volumes || true"
-  ]
+  ],
+  "name": "openai-chat"
 }

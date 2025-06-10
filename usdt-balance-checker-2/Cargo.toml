@@ -1,5 +1,5 @@
 [package]
-name = "openai-prompt-processor"
+name = "usdt-balance-checker"
 edition.workspace = true
 version.workspace = true
 authors.workspace = true
@@ -8,7 +8,7 @@ repository.workspace = true
 
 [dependencies]
 # Core dependencies (always needed)
-wit-bindgen-rt = {workspace = true}
+wit-bindgen-rt ={ workspace = true}
 wavs-wasi-utils = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
@@ -16,6 +16,12 @@ alloy-sol-macro = { workspace = true }
 wstd = { workspace = true }
 alloy-sol-types = { workspace = true }
 anyhow = { workspace = true }
+
+# Add for blockchain interactions
+alloy-primitives = { workspace = true }
+alloy-provider = { workspace = true }
+alloy-rpc-types = { workspace = true }
+alloy-network = { workspace = true }
 
 [lib]
 crate-type = ["cdylib"]
@@ -28,5 +34,5 @@ strip = true
 lto = true
 
 [package.metadata.component]
-package = "component:openai-prompt-processor"
+package = "component:usdt-balance-checker"
 target = "wavs:worker/layer-trigger-world@0.4.0-beta.4"
